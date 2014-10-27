@@ -75,14 +75,17 @@ shinyServer(function(input,output,session){
   })
 
   #update the enriched pathways for the user selected genelist
-  observe({
-    enriched_Pathways = sort(get_enrichedPathways())
-    updateSelectInput(session = session,
-                      inputId = "enrichedPathways",
-                      label = sprintf('Enriched pathway/s: %d (?)', sum(! enriched_Pathways %in% c('NA','ALL'))),
-                      choices = enriched_Pathways,
-                      selected = enriched_Pathways[[1]]                  
-    ) 
+  output$enrichedPathways <- renderUI({
+    
+    enriched_Pathways <- sort(get_enrichedPathways())
+    
+    selectInput(inputId = "enrichedPathways",
+                label = sprintf('Enriched pathway/s: %d (?)', sum(! enriched_Pathways %in% c('NA','ALL'))),
+                choices = enriched_Pathways,
+                selected = enriched_Pathways[[1]],
+                selectize=FALSE,
+                width='400px')
+    
   })
   
   output$mRNA_compute_time <- renderPrint({
