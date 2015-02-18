@@ -31,6 +31,10 @@ shinyUI( fluidPage(
                  tags$textarea(id="custom_gene_list",
                                rows=8, cols=200,
                                paste0(sample_gene_list, collapse=', ')),
+
+                 br(),
+                 actionButton("custom_search", h4("Update")),
+                 br(),
                  
                  checkboxInput('incl_corr_genes', 'also include correlated genes', value = FALSE),
                  
@@ -38,6 +42,11 @@ shinyUI( fluidPage(
                    condition="input.incl_corr_genes",
                    sliderInput('corr_threshold', label=h6('Correlation Threshold'),
                                min=0.5, max=1.0, value=0.9, step=0.05),
+                   # correlation direction
+                   selectInput("correlation_direction",
+                               label=h6("Correlation Direction"),
+                               choices=c("both", "positive", "negative"),
+                               selectize=T, multiple=F, selected="both"),
                    br()
                  ),
                  
@@ -46,7 +55,7 @@ shinyUI( fluidPage(
                  
                  br(),
                  
-                 actionButton("custom_search", h4("Search")),
+                 actionButton("custom_search", h4("Update")),
                  
                  br(),
                  
@@ -96,7 +105,7 @@ shinyUI( fluidPage(
       h4('3. Filter samples by:'),
       #1. filter based on mod_linetype
       selectInput('linetype', h5('Line type'),
-                  choices=unique(combined_metadata$Line_Type),
+                  choices=unique(combined_metadata$Cell_Line_Type),
                   selectize=T, multiple=T, selected=c('ESC','iPSC')),
       
       selectInput('gene_combination', h5('Reprogramming Gene Combination'),

@@ -94,31 +94,32 @@ shinyServer(function(input,output,session){
   
   get_filtered_mRNA_matrix <- reactive({
     #a.) subset on sample names based on user selected filters
-    filtered_metadata <- get_filtered_metadata(input,combined_metadata)
-    filtered_mRNA_NormCounts <- mRNA_NormCounts[,colnames(mRNA_NormCounts) %in% filtered_metadata$Sample ]
+    # filtered_metadata <- get_filtered_metadata(input,combined_metadata)
+    # filtered_mRNA_NormCounts <- mRNA_NormCounts[,colnames(mRNA_NormCounts) %in% filtered_metadata$Sample ]
+    filtered_eset <- filter_by_metadata(input, eset.mRNA)
+    
     #b.) subset based on selected genes
     selected_genesId <- convert_to_ensemblIds(selected_genes())
     if(input$incl_corr_genes == 'TRUE' & input$genelist_type == 'custom_gene_list'){ 
-      filtered_mRNA_NormCounts <- get_expMatrix_withcorrelated_genes(selected_genesId, filtered_mRNA_NormCounts, input$corr_threshold)
-    } else {  
-      filtered_mRNA_NormCounts <- filtered_mRNA_NormCounts[rownames(filtered_mRNA_NormCounts) %in% selected_genesId,]
+      filtered_eset <- get_eset_withcorrelated_genes(selected_genesId,
+                                                     filtered_eset,
+                                                     input$corr_threshold,
+                                                     input$correlation_direction)
+    } else {
+      filtered_eset <- filtered_eset[rownames(filtered_eset) %in% selected_genesId, ]
     }
-    filtered_mRNA_NormCounts
+    exprs(filtered_eset)
   })
 
   get_filtered_miRNA_matrix <- reactive({
     #get the microRNA expression matrix
-    filtered_microRNA_NormCounts <- miRNA_normCounts[row.names(miRNA_normCounts) %in% selected_miRNAs(),]
+    filtered_eset <- eset.miRNA[selected_miRNAs(), ]
     
     #subset on sample names based on user selected filters 
-    filtered_metadata <- get_filtered_metadata(input,combined_metadata)
-    filtered_microRNA_NormCounts <- filtered_microRNA_NormCounts[ ,colnames(filtered_microRNA_NormCounts) %in% filtered_metadata$Sample]
-    
-    #annotation <- get_filteredAnnotation(input,filtered_miRNA_metadata)
-    m <- filtered_microRNA_NormCounts
-    
-    m
-    })
+    filtered_eset <- filter_by_metadata(input, filtered_eset)
+        
+    exprs(filtered_eset)
+  })
   
   #reactive value to store precomputed shiny results
   heatmap_compute_results <- reactiveValues() 
