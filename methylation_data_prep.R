@@ -13,11 +13,19 @@ meth_to_gene <- read.delim(meth_to_gene_file@filePath, header=T, sep='\t',
 meth_to_gene$entrezID <-  as.character(meth_to_gene$entrezID)
 meth_to_gene <- subset(meth_to_gene, methProbeID %in% rownames(meth_data))
 
-#methylation metadata
-flog.info('Reading the PCBC methlyation metadata', name='synapse')
-meth_metadata <- synGet('syn2731151') 
-meth_metadata <- read.delim(meth_metadata@filePath, header=T, sep='\t',as.is=T, stringsAsFactors = F, check.names=F)
-rownames(meth_metadata) <- meth_metadata$Sample
-#keep only those samples that are present in the expression matrix
-rows_to_keep <- rownames(meth_metadata) %in% colnames(meth_data)
-meth_metadata <- meth_metadata[rows_to_keep, ]
+flog.info('Reading the PCBC methylation metadata from Synapse', name='synapse')
+methQuery <- sprintf("select %s from syn3156828",
+                      paste(c("Sample", metadataColsToUse), collapse=","))
+methMetadataTable <- synTableQuery(methQuery)
+meth_metadata <- methMetadataTable@values
+meth_metadata <- unique(meth_metadata)
+rownames(meth_metadata) <- meth_metadata[, "Sample"]
+meth_metadata[, "Sample"] <- NULL
+meth_metadata <- meth_metadata[colnames(meth_data), ]
+
+meth_features <- data.frame(explicit_rownames=rownames(meth_data))
+rownames(meth_features) <- rownames(meth_data)
+
+eset.meth <- ExpressionSet(assayData=as.matrix(meth_data),
+                           phenoData=AnnotatedDataFrame(meth_metadata),
+                           featureData=AnnotatedDataFrame(meth_features))

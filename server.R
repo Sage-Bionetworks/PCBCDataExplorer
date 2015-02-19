@@ -34,7 +34,7 @@ shinyServer(function(input,output,session){
     #get miRNA targetting the selected genes
     selected_miRNAs <- filter(miRNA_to_genes, GeneID %in% geneIds)
     selected_miRNAs <- unique(paste(selected_miRNAs$miRNA1,selected_miRNAs$miRNA2,sep=','))
-    flog.debug(sprintf("selected_miRNAs: %s", paste(selected_miRNAs, collapse=",")), name="server")
+    flog.debug(sprintf("%s selected_miRNAs", length(selected_miRNAs)), name="server")
     selected_miRNAs
   })
   
@@ -94,31 +94,40 @@ shinyServer(function(input,output,session){
   
   get_filtered_mRNA_matrix <- reactive({
     #a.) subset on sample names based on user selected filters
-    filtered_metadata <- get_filtered_metadata(input,combined_metadata)
-    filtered_mRNA_NormCounts <- mRNA_NormCounts[,colnames(mRNA_NormCounts) %in% filtered_metadata$Sample ]
+    filtered_eset <- filter_by_metadata(input, eset.mRNA)
+    
     #b.) subset based on selected genes
     selected_genesId <- convert_to_ensemblIds(selected_genes())
     if(input$incl_corr_genes == 'TRUE' & input$genelist_type == 'custom_gene_list'){ 
-      filtered_mRNA_NormCounts <- get_expMatrix_withcorrelated_genes(selected_genesId, filtered_mRNA_NormCounts, input$corr_threshold)
-    } else {  
-      filtered_mRNA_NormCounts <- filtered_mRNA_NormCounts[rownames(filtered_mRNA_NormCounts) %in% selected_genesId,]
+      filtered_eset <- get_eset_withcorrelated_genes(selected_genesId,
+                                                     filtered_eset,
+                                                     input$corr_threshold,
+                                                     input$correlation_direction)
+    } else {
+      filtered_eset <- filtered_eset[rownames(filtered_eset) %in% selected_genesId, ]
     }
-    filtered_mRNA_NormCounts
+    filtered_eset
   })
 
   get_filtered_miRNA_matrix <- reactive({
     #get the microRNA expression matrix
-    filtered_microRNA_NormCounts <- miRNA_normCounts[row.names(miRNA_normCounts) %in% selected_miRNAs(),]
+    filtered_eset <- eset.miRNA[selected_miRNAs(), ]
     
     #subset on sample names based on user selected filters 
-    filtered_metadata <- get_filtered_metadata(input,combined_metadata)
-    filtered_microRNA_NormCounts <- filtered_microRNA_NormCounts[ ,colnames(filtered_microRNA_NormCounts) %in% filtered_metadata$Sample]
+    filtered_eset <- filter_by_metadata(input, filtered_eset)
+        
+    filtered_eset
+  })
+
+  get_filtered_methylation_matrix <- reactive({
+    #get the methylation expression matrix
+    filtered_eset <- eset.meth[selected_methProbes(), ]
     
-    #annotation <- get_filteredAnnotation(input,filtered_miRNA_metadata)
-    m <- filtered_microRNA_NormCounts
+    #subset on sample names based on user selected filters 
+    filtered_eset <- filter_by_metadata(input, filtered_eset)
     
-    m
-    })
+    filtered_eset
+  })
   
   #reactive value to store precomputed shiny results
   heatmap_compute_results <- reactiveValues() 
@@ -130,7 +139,9 @@ shinyServer(function(input,output,session){
     cluster_rows <- isolate(input$cluster_rows)
     cluster_cols <- isolate(input$cluster_cols)
     
-    m <- get_filtered_mRNA_matrix()
+    m_eset <- get_filtered_mRNA_matrix()
+    m <- exprs(m_eset)
+    
     # zero variance filter
     rows_to_keep <- apply(m,1,var) > 0
     m <- m[rows_to_keep, ]
@@ -139,20 +150,12 @@ shinyServer(function(input,output,session){
     validate( need( ncol(m) != 0, "Filtered mRNA expression matrix contains 0 Samples") )
     validate( need( nrow(m) != 0, "Filtered mRNA expression matrix contains 0 genes") )
     validate( need(nrow(m) < 10000, "Filtered mRNA expression matrix contains > 10000 genes. MAX LIMIT 10,000 ") )
-    fontsize_row=8
-    fontsize_col=8
-    if(nrow(m) > 100){ fontsize_row = 0 }
-    if(ncol(m) > 50){ fontsize_col=0 }
-    #convert ensembl ID's to gene name
-    explicit_rownames = hg19_annot %>%
-      filter(ENSEMBL %in% rownames(m)) %>%
-      group_by(ENSEMBL) %>%
-      summarise(SYMBOL = unique(SYMBOL)[1])
-    # explicit_rownames <- explicit_rownames$SYMBOL
-    #annotation
-    filtered_metadata <- get_filtered_metadata(input, combined_metadata)
-    annotation <- get_filteredAnnotation(input, filtered_metadata)
     
+    filtered_metadata <- pData(m_eset)
+    annotation <- get_heatmapAnnotation(input$heatmap_annotation_labels, filtered_metadata)
+    
+    fontsize_row <- ifelse(nrow(m) > 100, 0, 8)
+    fontsize_col <- ifelse(ncol(m) > 50, 0, 8)    
     
     withProgress(session, {
       setProgress(message = "clustering & rendering heatmap, please wait", 
@@ -164,7 +167,7 @@ shinyServer(function(input,output,session){
                                                          fontsize_row=fontsize_row,
                                                          scale=T,
                                                          clustering_method = input$clustering_method,
-                                                         explicit_rownames = explicit_rownames$SYMBOL,
+                                                         explicit_rownames = fData(m_eset)$explicit_rownames,
                                                          cluster_rows=cluster_rows, cluster_cols=cluster_cols)
       heatmap_compute_results$mRNA_annotation <- annotation
       heatmap_compute_results$mRNA_metadata <- filtered_metadata
@@ -178,26 +181,23 @@ shinyServer(function(input,output,session){
     cluster_rows <- isolate(input$cluster_rows)
     cluster_cols <- isolate(input$cluster_cols)
     
-    #get the microRNA expression matrix
-    filtered_microRNA_NormCounts <- miRNA_normCounts[row.names(miRNA_normCounts) %in% selected_miRNAs(),]
+    m_eset <- get_filtered_miRNA_matrix()
     
     #subset on sample names based on user selected filters 
-    filtered_metadata <- get_filtered_metadata(input,combined_metadata)
-    filtered_microRNA_NormCounts <- filtered_microRNA_NormCounts[ ,colnames(filtered_microRNA_NormCounts) %in% filtered_metadata$Sample]
+    filtered_metadata <- pData(m_eset)
     
-    #annotation <- get_filteredAnnotation(input,filtered_miRNA_metadata)
-    m <- filtered_microRNA_NormCounts
     # zero variance filter
-    rows_to_keep <- apply(m,1,var) > 0
-    m <- m[rows_to_keep, ]
-    m <- data.matrix(m)
+    rows_to_keep <- apply(exprs(m_eset), 1, var) > 0
+    m_eset <- m_eset[rows_to_keep, ]
+    m <- exprs(m_eset)
+    
     validate( need( nrow(m) != 0, "Filtered miRNA expression matrix contains 0 genes") )
     validate( need(nrow(m) < 10000, "Filtered miRNA expression matrix contains > 10000 genes. MAX LIMIT 10,000 ") )
-    fontsize_row=4
-    fontsize_col=8
-    if(nrow(m) > 200){ fontsize_row = 0 }
-    if(ncol(m) > 50){ fontsize_col=0 }
-    annotation <- get_filteredAnnotation(input, filtered_metadata)
+    
+    annotation <- get_heatmapAnnotation(input$heatmap_annotation_labels, filtered_metadata)
+    
+    fontsize_row <- ifelse(nrow(m) > 200, 0, 8)
+    fontsize_col <- ifelse(ncol(m) > 50, 0, 8)
     
     withProgress(session, {
       setProgress(message = "clustering & rendering heatmap, please wait", 
@@ -210,6 +210,7 @@ shinyServer(function(input,output,session){
                                                           fontsize_row=fontsize_row,
                                                           scale=T,
                                                           clustering_method = input$clustering_method,
+                                                          explicit_rownames = fData(m_eset)$explicit_rownames,
                                                           color=colorRampPalette(rev(brewer.pal(n = 7, name = "BrBG")))(100))
     }) #END withProgress
   
@@ -237,38 +238,34 @@ shinyServer(function(input,output,session){
     cluster_cols <- isolate(input$cluster_cols)
     
     #get the filtered methylation data
-    flt_meth_data <- meth_data[row.names(meth_data) %in% selected_methProbes(),]
-   
-    #subset on sample names based on user selected filters 
-    filtered_metadata <- get_filtered_metadata(input,combined_metadata)
-    flt_meth_data <- flt_meth_data[ ,colnames(flt_meth_data) %in% filtered_metadata$Sample]
-    
-    m <- flt_meth_data
-    validate( need( nrow(m) != 0, "Filtered methylation data matrix contains 0 genes") )
+    # These are based on the selected gene names
+    m_eset <- get_filtered_methylation_matrix()
+        
+    validate( need( nrow(m_eset) != 0, "Filtered methylation data matrix contains 0 genes") )
     
     # zero variance filter
-    var_methProbe <- apply(m,1,var)
+    var_methProbe <- apply(exprs(m_eset), 1, var)
     rows_to_keep <- var_methProbe > .01
-    m <- m[rows_to_keep, ]
-    m <- data.matrix(m)
+    m_eset <- m_eset[rows_to_keep, ]
+    m <- exprs(m_eset)
     
-    annotation <- get_filteredAnnotation(input,filtered_metadata)
+    annotation <- get_heatmapAnnotation(input$heatmap_annotation_labels, pData(m_eset))
     validate( need( nrow(m) != 0, "Filtered methylation data matrix contains 0 genes") )
     validate( need(nrow(m) < 5000, "Filtered methylation data matrix > 5000 genes. MAX LIMIT 5,000 ") )
-    fontsize_row=8
-    fontsize_col=8
-    if(nrow(m) > 100){ fontsize_row = 0 }
-    if(ncol(m) > 50){ fontsize_col=0 }
     
+    fontsize_row <- ifelse(nrow(m) > 100, 0, 8)
+    fontsize_col <- ifelse(ncol(m) > 50, 0, 8)
+        
     withProgress(session, {
       setProgress(message = "clustering & rendering heatmap, please wait", 
                   detail = "This may take a few moments...")
-      heatmap_compute_results$methyl_heatmap <- expHeatMap(m,annotation,
+      heatmap_compute_results$methyl_heatmap <- expHeatMap(m, annotation,
                                                            cluster_rows=cluster_rows, cluster_cols=cluster_cols,
                                                            clustering_distance_rows = input$clustering_distance,
                                                            clustering_distance_cols = input$clustering_distance,
                                                            fontsize_col=fontsize_col, 
                                                            fontsize_row=fontsize_row,
+                                                           explicit_rownames = fData(m_eset)$explicit_rownames,
                                                            clustering_method = input$clustering_method)
     }) #END withProgress
   })
