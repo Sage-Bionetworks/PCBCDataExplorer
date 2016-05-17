@@ -14,13 +14,13 @@ sample_genes_obj <- synGet("syn4943393")
 df <- read.delim(getFileLocation(sample_genes_obj), sep="\t")
 sample_gene_list <- as.character(unique(df$feature))
 
-# sample_miRNAs_obj <- synGet("syn4943396")
-# df <- read.delim(getFileLocation(sample_miRNAs_obj), sep="\t")
-# sample_miRNAs <- as.character(unique(df$feature))
-
-sample_miRNAs_obj <- synGet("syn4609631")
+sample_miRNAs_obj <- synGet("syn4943396")
 df <- read.delim(getFileLocation(sample_miRNAs_obj), sep="\t")
-sample_miRNAs <- as.character(unique(df$GeneSymbol))
+sample_miRNAs <- as.character(unique(df$feature))
+
+# sample_miRNAs_obj <- synGet("syn5014584")
+# df <- read.delim(getFileLocation(sample_miRNAs_obj), sep="\t")
+# sample_miRNAs <- as.character(unique(df$GeneSymbol))
 
 sample_methyl_obj <- synGet("syn4943397")
 df <- read.delim(getFileLocation(sample_methyl_obj), sep="\t")

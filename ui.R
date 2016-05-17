@@ -104,6 +104,10 @@ myBody <-dashboardBody(
                            choices=c("Gene", "Pathway", "miRNA", "Methylation"),
                            selectize=T, multiple=F, selected="mRNA"),
                
+               htmlOutput('datasourceui'),
+               
+               hr(),
+               
                uiOutput("featureui"),
                
                hr(),

@@ -17,6 +17,11 @@ plotDisplayChoiceList <- list(
                 "Genes targeted by methylation probes"="mRNA")
 )
 
+synapseIDList <- list(Gene=c('data'='syn5011095', 'metadata'='syn3156503'),
+                      Pathway=c('data'='syn5011095', 'metadata'='syn3156503'),
+                      miRNA=c('data'='syn5014454', 'metadata'='syn3219876'),
+                      Methylation=c('data'='syn4487642', 'metadata'='syn3156828'))
+
 #Define the server the logic
 shinyServer(
   
@@ -63,6 +68,18 @@ shinyServer(
       
     })
 
+    output$datasourceui <- renderUI({
+      featuresel <- input$custom_search
+
+      dataID <- synapseIDList[[featuresel]][['data']]
+      metaID <- synapseIDList[[featuresel]][['metadata']]
+      
+      HTML(sprintf("Data source: %s, Metadata source: %s", 
+                   a(href=sprintf('https://www.synapse.org/!#Synapse:%s', dataID), dataID), 
+                   a(href=sprintf('https://www.synapse.org/!#Synapse:%s', metaID), metaID)))
+              
+    })
+    
     output$plotdisplayui <- renderUI({
 
       featuresel <- input$custom_search
