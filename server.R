@@ -27,6 +27,8 @@ shinyServer(
   
   function(input, output, session) {
     
+    session$onSessionEnded(stopApp)
+    
     dataset <- reactive({
       flog.debug(input$plotdisplay, name="server")
       switch(input$plotdisplay,
