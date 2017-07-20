@@ -46,12 +46,8 @@ myBody <-dashboardBody(
                            box(width=NULL, status='primary', collapsible=TRUE, 
                                collapsed=FALSE, solidHeader=TRUE,
                                title = tagList(shiny::icon("th-list", lib="glyphicon"),
-                                               "Label samples"),               
-                               selectInput('heatmap_annotation_labels',
-                                           'Annotate Samples by:',
-                                           # -1 to remove the first value "Sample"
-                                           choices=colnames(combined_metadata)[-1],
-                                           selected='Diffname_short')
+                                               "Label samples"),
+                               uiOutput('heatmapannotation')
                            ),
                            
                            # Information on number of features/samples selected

@@ -31,7 +31,7 @@ shinyServer(
     
     session$sendCustomMessage(type="readCookie",
                               message=list(name='org.sagebionetworks.security.user.login.token'))
-    
+
     foo <- observeEvent(input$cookie, {
       
       synapseLogin(sessionToken=input$cookie)
@@ -76,6 +76,14 @@ shinyServer(
                                          choices=unique(combined_metadata$Originating_Lab),
                                          selectize=T, multiple=T)))
         )
+      })
+      
+      output$heatmapannotation <- renderUI({
+        selectInput('heatmap_annotation_labels',
+                    'Annotate Samples by:',
+                    # -1 to remove the first value "Sample"
+                    choices=colnames(combined_metadata)[-1],
+                    selected='Diffname_short')
       })
       
       output$plotHelp <- renderUI({
@@ -394,7 +402,7 @@ shinyServer(
       })    
     }
     )
-})
+  })
 
 
 #   
