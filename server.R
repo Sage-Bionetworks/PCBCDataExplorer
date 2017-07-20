@@ -36,7 +36,8 @@ shinyServer(
       
       synapseLogin(sessionToken=input$cookie)
       
-      source("load.R")
+      withProgress(source("load.R"), 
+                   message = "Loading data...")
       
       dataset <- reactive({
         flog.debug(input$plotdisplay, name="server")
