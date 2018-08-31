@@ -649,7 +649,7 @@ kmeans_pheatmap = function(mat, k = min(nrow(mat), 150), sd_limit = NA, ...){
 #' pheatmap(test, clustering_distance_rows = drows, clustering_distance_cols = dcols)
 #'
 #' @export
-memoised_pheatmap = function(mat, color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100), 
+memoised_pheatmap = function(mat, color = colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7, name = "RdYlBu")))(100), 
                              kmeans_k = NA, breaks = NA, border_color = "grey60", cellwidth = NA, 
                              cellheight = NA, scale = "none", cluster_rows = TRUE, cluster_cols = TRUE, 
                              clustering_distance_rows = "euclidean", clustering_distance_cols = "euclidean", 
