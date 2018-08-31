@@ -8,7 +8,7 @@ flog.info('Reading the PCBC normalized mRNA Exp data from Synapse', name='synaps
 mRNA_NormCounts_obj <- synGet('syn5011095')
 
 #read in the file
-mRNA_NormCounts <- fread(mRNA_NormCounts_obj@filePath, data.table=FALSE)
+mRNA_NormCounts <- fread(getFileLocation(mRNA_NormCounts_obj), data.table=FALSE)
 
 ## Set gene symbol as row names, remove column
 rownames(mRNA_NormCounts) <- mRNA_NormCounts$GeneName
@@ -21,7 +21,7 @@ flog.info('Reading the PCBC mRNA metadata from Synapse', name='synapse')
 mRNAQuery <- sprintf("select %s from syn3156503",
                      paste(c(metadataIdCol, metadataColsToUse), collapse=","))
 mRNAMetadataTable <- synTableQuery(mRNAQuery)
-mRNA_metadata <- mRNAMetadataTable@values
+mRNA_metadata <- mRNAMetadataTable$asDataFrame()
 rownames(mRNA_metadata) <- mRNA_metadata[, metadataIdCol]
 # mRNA_metadata[, metadataIdCol] <- NULL
 

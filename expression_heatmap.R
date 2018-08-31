@@ -1,8 +1,8 @@
 require(grid)
-require(RColorBrewer)
-require(memoise)
-library("WGCNA")
-library(flashClust)
+# require(RColorBrewer)
+# require(memoise)
+# library("WGCNA")
+# library(flashClust)
 
 lo = function(rown, coln, nrow, ncol, cellheight = NA, cellwidth = NA, 
               treeheight_col, treeheight_row, legend, annotation, annotation_colors, annotation_legend, 
@@ -11,7 +11,8 @@ lo = function(rown, coln, nrow, ncol, cellheight = NA, cellwidth = NA,
   if(!is.null(coln[1])){
     longest_coln = which.max(strwidth(coln, units = 'in'))
     gp = list(fontsize = fontsize_col, ...)
-    coln_height = unit(1, "grobheight", textGrob(coln[longest_coln], rot = 90, gp = do.call(gpar, gp))) + unit(5, "bigpts")
+    coln_height = grid::unit(1, "grobheight", grid::textGrob(coln[longest_coln], rot = 90, 
+                                                             gp = do.call(grid::gpar, gp))) + grid::unit(5, "bigpts")
   }
   else{
     coln_height = unit(5, "bigpts")
@@ -426,11 +427,11 @@ cluster_mat = function(mat, distance, method, cor_method){
     }
   }
   
-  return(flashClust(d, method = method)) #hclust replaced by flashClust from WCGNA (much faster than hclust)
+  return(flashClust::flashClust(d, method = method)) #hclust replaced by flashClust from WCGNA (much faster than hclust)
 }
 
 #for faster rendering caching the computationally expensive functions
-memoised_cluster_mat <- memoise(function(mat, distance, method, cor_method) cluster_mat(mat, distance, method,cor_method))
+memoised_cluster_mat <- memoise::memoise(function(mat, distance, method, cor_method) cluster_mat(mat, distance, method,cor_method))
 
 scale_rows = function(x){
   m = apply(x, 1, mean, na.rm = T)

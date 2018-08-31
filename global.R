@@ -7,7 +7,7 @@ options(warn=-1)
 
 library("devtools")
 # library("shinyIncubator")
-library("synapseClient")
+library("synapser")
 # library("gdata")
 library("shiny")
 # library("digest")

@@ -1,7 +1,5 @@
-library(memoise)
-
 #for faster rendering caching the computationally expensive functions
-memoised_corAndPvalue <- memoise(function(...) corAndPvalue(...))
+memoised_corAndPvalue <- memoise::memoise(function(...) corAndPvalue(...))
 
 output_download_data <- function(mat, file) {  
   df <- cbind(data.frame(ID=rownames(mat)),
