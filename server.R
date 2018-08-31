@@ -29,14 +29,13 @@ shinyServer(
     
     session$onSessionEnded(stopApp)
     
-    # session$sendCustomMessage(type="readCookie",
-    #                           message=list(name='org.sagebionetworks.security.user.login.token'))
-    # 
-    # foo <- observeEvent(input$cookie, {
-    #   
-    #   synapseLogin(sessionToken=input$cookie)
-  synLogin()
-  
+    session$sendCustomMessage(type="readCookie",
+                              message=list(name='org.sagebionetworks.security.user.login.token'))
+
+    foo <- observeEvent(input$cookie, {
+
+      synLogin(sessionToken=input$cookie)
+
       withProgress(source("load.R"), 
                    message = "Loading data...")
       
@@ -404,7 +403,7 @@ shinyServer(
       })    
     }
     )
-#  })
+  })
 
 
 #   
