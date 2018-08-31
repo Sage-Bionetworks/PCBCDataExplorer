@@ -1,5 +1,9 @@
 flog.debug("Starting App", name="server")
 
+getFileLocation <- function(entity) {
+  entity$path
+}
+
 #source the heatmap code
 source("expression_heatmap.R")
 

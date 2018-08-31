@@ -33,9 +33,9 @@ shinyServer(
                               message=list(name='org.sagebionetworks.security.user.login.token'))
 
     foo <- observeEvent(input$cookie, {
-      
-      synapseLogin(sessionToken=input$cookie)
-      
+
+      synLogin(sessionToken=input$cookie)
+
       withProgress(source("load.R"), 
                    message = "Loading data...")
       
@@ -356,7 +356,7 @@ shinyServer(
         fontsize_col <- ifelse(ncol(m) > 50, 0, 8)    
         
         # Need to scale methylation breaks differently
-        heatmap.color <- colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+        heatmap.color <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7, name = "RdYlBu")))(100)
         if (input$plotdisplay == "Methylation") {
           heatmap.breaks <- generate_breaks(m, n = length(heatmap.color), center = F)
         }
