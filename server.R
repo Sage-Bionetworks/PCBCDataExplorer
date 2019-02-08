@@ -29,8 +29,7 @@ shinyServer(
     
     session$onSessionEnded(stopApp)
     
-    session$sendCustomMessage(type="readCookie",
-                              message=list(name='org.sagebionetworks.security.user.login.token'))
+    session$sendCustomMessage(type="readCookie", message=list())
 
     foo <- observeEvent(input$cookie, {
 
